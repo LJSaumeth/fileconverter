@@ -1,0 +1,30 @@
+[project]
+name = "fileconverter-backend"
+version = "0.1.0"
+description = "FileConverter backend — hexagonal architecture file conversion service"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "coverage>=7.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
