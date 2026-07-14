@@ -14,10 +14,10 @@ Un punto central del diseño es que **agregar un nuevo tipo de conversión no de
 
 La app incluye **dos versiones de interfaz** intercambiables desde la ventana de opciones (mediante un botón/switch):
 
-- **Modo Básico**: experiencia simple, pensada para el usuario casual — arrastrar archivo, elegir formato, convertir.
-- **Modo Pro**: experiencia más completa — cola de conversiones, opciones avanzadas por tipo de archivo, historial, configuración de calidad/compresión, etc.
+- **Modo Básico (SFW)**: misma funcionalidad completa que el modo NSFW, pero con una apariencia sobria y profesional, apta para entornos de trabajo (safe for work).
+- **Modo NSFW**: misma funcionalidad, con una apariencia más desinhibida y no apta para entornos laborales (not safe for work).
 
-Ambas interfaces consumen los mismos servicios del backend; solo cambia la capa de presentación. La preferencia de modo se persiste entre sesiones.
+Ambos modos comparten las mismas capacidades (cola de conversiones, opciones avanzadas, historial, configuración, etc.); solo cambia la capa de presentación visual. La preferencia de modo se persiste entre sesiones.
 
 ---
 
@@ -27,8 +27,8 @@ Ambas interfaces consumen los mismos servicios del backend; solo cambia la capa 
 ┌───────────────────────────────────────────┐
 │              Electron (shell)              │
 │  ┌───────────────────────────────────────┐ │
-│  │     React (Modo Básico / Modo Pro)     │ │
-│  │        UI intercambiable por switch     │ │
+│  │     React (Modo Básico / Modo NSFW)     │ │
+│  │        UI intercambiable por switch      │ │
 │  └────────────────┬────────────────────────┘ │
 │                    │ HTTP / WebSocket          │
 │  ┌─────────────────▼─────────────────────┐   │
@@ -59,7 +59,7 @@ La idea clave de la arquitectura hexagonal: el **dominio** (las reglas de qué e
 - **React Dropzone** — manejo de drag & drop de archivos
 - **Axios** o `fetch` nativo — llamadas HTTP al backend
 - **Zustand** — manejo de estado (progreso, cola de archivos, modo de interfaz activo)
-- **React Context API** — control global del modo de interfaz (Básico/Pro) y su persistencia
+- **React Context API** — control global del modo de interfaz (Básico/NSFW) y su persistencia
 
 ### 2. Contenedor Desktop
 - **Electron** — ventana nativa + proceso principal
@@ -114,6 +114,9 @@ La idea clave de la arquitectura hexagonal: el **dominio** (las reglas de qué e
 - **pytest** — tests de dominio y casos de uso (sin depender de adaptadores reales, gracias a los puertos se pueden mockear fácilmente)
 - **Vitest** o **Jest** — tests del frontend React
 
+### 8. Estilo de código
+Todo el código (Python y JavaScript/TypeScript) debe seguir los lineamientos de **Clean Code**: funciones pequeñas, nombres significativos, módulos con una sola responsabilidad.
+
 ---
 
 ## Estructura de carpetas propuesta
@@ -124,7 +127,7 @@ fileconverter/
 │   ├── src/
 │   │   ├── interfaces/
 │   │   │   ├── basic/        # Modo Básico
-│   │   │   └── pro/          # Modo Pro
+│   │   │   └── nsfw/          # Modo NSFW
 │   │   ├── shared/            # componentes y lógica compartida entre ambos modos
 │   │   ├── context/            # AppModeContext (switch de interfaz)
 │   │   └── services/            # cliente HTTP/WebSocket hacia el backend
