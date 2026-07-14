@@ -114,8 +114,6 @@ La idea clave de la arquitectura hexagonal: el **dominio** (las reglas de qué e
 - **pytest** — tests de dominio y casos de uso (sin depender de adaptadores reales, gracias a los puertos se pueden mockear fácilmente)
 - **Vitest** o **Jest** — tests del frontend React
 
-### 8. Estilo de código
-Todo el código (Python y JavaScript/TypeScript) debe seguir los lineamientos de **Clean Code**: funciones pequeñas, nombres significativos, módulos con una sola responsabilidad.
 
 ---
 
