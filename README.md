@@ -119,7 +119,7 @@ Todo el código (Python y JavaScript/TypeScript) debe seguir los lineamientos de
 
 ---
 
-## Estructura de carpetas propuesta
+## Estructura de carpetas
 
 ```
 fileconverter/
