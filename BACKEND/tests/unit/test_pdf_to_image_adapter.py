@@ -32,10 +32,9 @@ class TestPdfToImageAdapter:
 
         adapter.convert(source, target, {})
 
-        output_files = list(tmp_path.glob("output_page_*.png"))
-        assert len(output_files) == 1
-        assert output_files[0].exists()
-        assert output_files[0].stat().st_size > 0
+        # Single page is saved directly to target_path (not suffixed)
+        assert target.exists()
+        assert target.stat().st_size > 0
 
     def test_convert_multi_page_pdf(self, settings, tmp_path):
         adapter = PdfToImageAdapter(settings)
@@ -58,9 +57,9 @@ class TestPdfToImageAdapter:
 
         adapter.convert(source, target, {"dpi": 300})
 
-        output = tmp_path / "output_page_1.jpg"
-        assert output.exists()
-        assert output.stat().st_size > 0
+        # Single page is saved directly to target_path
+        assert target.exists()
+        assert target.stat().st_size > 0
 
     def test_convert_six_or_more_pages_produces_zip(self, settings, tmp_path):
         adapter = PdfToImageAdapter(settings)
@@ -145,8 +144,9 @@ class TestPdfToImageAdapter:
 
         adapter.convert(source, target, {"quality": 50})
 
-        output = tmp_path / "output_page_1.jpg"
-        assert output.exists()
+        # Single page is saved directly to target_path
+        assert target.exists()
+        assert target.stat().st_size > 0
 
 
 def _create_test_pdf(path: Path, pages: int = 1):

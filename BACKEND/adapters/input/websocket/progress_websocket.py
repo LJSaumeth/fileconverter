@@ -1,3 +1,4 @@
+from contextlib import suppress
 
 from fastapi import WebSocket
 
@@ -6,12 +7,17 @@ from domain.ports.output.progress_notifier_port import ProgressNotifierPort
 
 
 class WebSocketNotifierAdapter(ProgressNotifierPort):
-    def __init__(self, websocket: WebSocket):
+    """Sends conversion progress to a single WebSocket client.
+
+    This adapter is created per-client by ``ConnectionManager`` and
+    injected into the convert use case when the client has an active
+    WebSocket connection.
+    """
+
+    def __init__(self, websocket: WebSocket) -> None:
         self._websocket = websocket
 
     async def notify(self, progress: ConversionProgress) -> None:
-        from contextlib import suppress
-
         with suppress(Exception):
             await self._websocket.send_json(
                 {
