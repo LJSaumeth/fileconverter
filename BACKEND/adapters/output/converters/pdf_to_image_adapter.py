@@ -7,11 +7,13 @@ from domain.entities import ConversionError, FileFormat
 from domain.ports.output.file_converter_port import FileConverterPort
 from infrastructure.config import Settings
 
+PageSpec = tuple[int, int] | list[int] | None
+
 
 class PdfToImageAdapter(FileConverterPort):
     SUPPORTED_TARGETS = {FileFormat.PNG, FileFormat.JPG}
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
     def supports(self, source: FileFormat, target: FileFormat) -> bool:
@@ -33,7 +35,7 @@ class PdfToImageAdapter(FileConverterPort):
 
         page_indices = self._resolve_page_indices(pages, doc.page_count)
         total_pages = len(page_indices)
-        use_zip = total_pages >= 6
+        use_zip = total_pages >= self._settings.zip_threshold
 
         if use_zip:
             output_dir = target_path.parent / f"{target_path.stem}_images"
@@ -61,13 +63,19 @@ class PdfToImageAdapter(FileConverterPort):
                 raise
         else:
             try:
-                for page_num in page_indices:
+                for i, page_num in enumerate(page_indices):
                     page = doc[page_num]
                     ext = self._resolve_ext(target_path)
-                    out = (
-                        target_path.parent
-                        / f"{target_path.stem}_page_{page_num + 1}.{ext}"
-                    )
+                    # When there is only one page, save directly to the
+                    # requested target_path so the HTTP layer can serve
+                    # the file via FileResponse without guessing names.
+                    if total_pages == 1:
+                        out = target_path
+                    else:
+                        out = (
+                            target_path.parent
+                            / f"{target_path.stem}_page_{page_num + 1}.{ext}"
+                        )
                     self._render_page(page, out, dpi, quality, ext)
             except Exception:
                 stem = source_path.stem
@@ -94,7 +102,7 @@ class PdfToImageAdapter(FileConverterPort):
             for p in image_paths:
                 zf.write(p, p.name)
 
-    def _resolve_page_indices(self, pages, total_pages: int) -> list[int]:
+    def _resolve_page_indices(self, pages: PageSpec, total_pages: int) -> list[int]:
         if pages is None:
             return list(range(total_pages))
 
@@ -133,13 +141,13 @@ class PdfToImageAdapter(FileConverterPort):
         quality = int(quality)
         return max(1, min(100, quality))
 
-    def _parse_pages(self, options: dict):
+    def _parse_pages(self, options: dict) -> PageSpec:
         pages = options.get("pages")
         if pages is None:
             return None
         if isinstance(pages, list):
             return [int(p) for p in pages]
-        if isinstance(pages, (tuple, list)):
+        if isinstance(pages, tuple) and len(pages) == 2:
             return (int(pages[0]), int(pages[1]))
         return None
 
