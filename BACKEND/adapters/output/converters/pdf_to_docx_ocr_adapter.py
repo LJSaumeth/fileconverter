@@ -1,6 +1,7 @@
 import os
 import platform
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -21,8 +22,9 @@ class PdfToDocxOcrAdapter(FileConverterPort):
     **Requirements**
     - ``pytesseract`` (Python) — ``pip install pytesseract``
     - ``python-docx`` (Python) — ``pip install python-docx``
-    - `Tesseract OCR engine <https://github.com/tesseract-ocr/tesseract>`_
-      installed on the system and available in ``PATH`` (or configured
+    - `Tesseract OCR engine <https://github.com/tesseract-ocr/tesseract>`
+      can be **bundled** with the project (see ``bin/download_tesseract.ps1``)
+      or installed on the system and available in ``PATH`` (or configured
       via ``FC_TESSERACT_PATH`` or ``settings.tesseract_path``).
 
     **Languages**
@@ -116,6 +118,14 @@ class PdfToDocxOcrAdapter(FileConverterPort):
             if self._tesseract_cmd:
                 pytesseract.pytesseract.tesseract_cmd = self._tesseract_cmd
 
+                # When using a bundled Tesseract, point TESSDATA_PREFIX to
+                # the directory that contains ``tessdata/`` so the engine
+                # can find the trained language data (e.g. ``eng.traineddata``).
+                tesseract_dir = Path(self._tesseract_cmd).parent
+                tessdata = tesseract_dir / "tessdata"
+                if tessdata.exists():
+                    os.environ.setdefault("TESSDATA_PREFIX", str(tesseract_dir))
+
             # Write image to a temporary file (pytesseract works with
             # files more reliably than in-memory on all platforms).
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
@@ -169,12 +179,40 @@ class PdfToDocxOcrAdapter(FileConverterPort):
         )
 
     def _find_tesseract(self) -> str | None:
-        """Locate the Tesseract binary."""
+        """Locate the Tesseract binary.
+
+        Search order
+        ------------
+        1. Explicit path from settings (``FC_TESSERACT_PATH`` / ``.env``).
+        2. Bundled with PyInstaller (``sys._MEIPASS/bin/tesseract/``).
+        3. Bundled in development mode (``BACKEND/bin/tesseract/``).
+        4. Common install locations (Windows ``Program Files``).
+        5. ``PATH`` environment.
+        6. macOS Homebrew (``/opt/homebrew/bin/tesseract``).
+        """
+        # ── 1. Explicit path ──────────────────────────────────────────
         explicit = self._settings.tesseract_path
         if explicit and Path(explicit).exists():
             return explicit
 
-        # Try common locations per platform
+        # ── 2. Bundled with PyInstaller ──────────────────────────────
+        try:
+            base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+            bundled = base / "bin" / "tesseract" / "tesseract.exe"
+            if bundled.exists():
+                return str(bundled)
+        except AttributeError:
+            pass
+
+        # ── 3. Bundled in development mode ───────────────────────────
+        dev_bundle = (
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "bin" / "tesseract" / "tesseract.exe"
+        )
+        if dev_bundle.exists():
+            return str(dev_bundle)
+
+        # ── 4. Common install locations ──────────────────────────────
         system = platform.system()
         if system == "Windows":
             candidates = [
@@ -185,11 +223,12 @@ class PdfToDocxOcrAdapter(FileConverterPort):
                 if Path(c).exists():
                     return c
 
+        # ── 5. PATH ──────────────────────────────────────────────────
         found = shutil.which("tesseract")
         if found:
             return found
 
-        # Extra check on macOS via Homebrew
+        # ── 6. macOS Homebrew ────────────────────────────────────────
         if system == "Darwin":
             brew = "/opt/homebrew/bin/tesseract"
             if Path(brew).exists():
