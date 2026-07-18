@@ -63,7 +63,7 @@ class PdfToImageAdapter(FileConverterPort):
                 raise
         else:
             try:
-                for i, page_num in enumerate(page_indices):
+                for _i, page_num in enumerate(page_indices):
                     page = doc[page_num]
                     ext = self._resolve_ext(target_path)
                     # When there is only one page, save directly to the

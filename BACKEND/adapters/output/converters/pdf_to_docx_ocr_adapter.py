@@ -4,6 +4,8 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import fitz
+
 from domain.entities import ConversionError, FileFormat
 from domain.ports.output.file_converter_port import FileConverterPort
 from infrastructure.config import Settings
